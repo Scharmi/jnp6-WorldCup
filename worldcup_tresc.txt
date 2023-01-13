@@ -50,8 +50,8 @@ Każde pole planszy ma swoją nazwę. Są następujące pola:
     300 zdzisławów;
 7.  mecz z Arabią Saudyjską, dawniej o wszystko, ale dziś o punkty, opłata za
     rozegranie meczu to 280 zdzisławów;
-8.  bukmacher, przy zatrzymaniu się co trzeci gracz wygrywa 300 zdzisławów za
-    zakład, pozostali przegrywają 300 zdzisławów;
+8.  bukmacher, przy zatrzymaniu się co trzeci gracz wygrywa 100 zdzisławów za
+    zakład, pozostali przegrywają 100 zdzisławów;
 9.  mecz z Argentyną, zwykle mecz o honor, ale jest szansa na wygraną 0:2,
     o punkty, opłata za rozegranie meczu 250 zdzisławów;
 10. gol, po weryfikacji VAR sędzia uznaje gola i dostajesz premię 120 zdzisławów;
