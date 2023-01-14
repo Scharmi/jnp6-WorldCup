@@ -1,127 +1,251 @@
 #ifndef WORLDCUP2022_H
 #define WORLDCUP2022_H
 
+#include <iostream>
+#include <list>
 #include <memory>
 #include <string>
-#include <list>
 #include <vector>
 
-#include <worldcup.h>
+#include "worldcup.h"
 
 class Player {
-private:
-    uint64_t money;
+   private:
     std::string const name;
-    uint64_t field;
-    uint64_t suspension;
-public:
-    Player(std::string const &name) : name(name){
-        this->money = 1000;
-        this->suspension = 0;
+    unsigned int money;
+    unsigned int field;
+    unsigned int suspension;
+
+   public:
+    Player(std::string const &name)
+        : name(name), money(1000), field(0), suspension(0) {}
+
+    bool bankrupt() { return money == 0; }
+
+    bool waiting() { return suspension > 0; }
+
+    std::string getStatus() {
+        if (bankrupt()) {
+            return "*** bankrut ***";
+        } else if (waiting()) {
+            return "*** czekanie: " + std::to_string(suspension) + " ***";
+        } else {
+            return "w grze";
+        }
     }
 
-    bool bankrupt() {
-        return money == 0;
+    unsigned int getMoney() { return money; }
+
+    std::string getName() { return name; }
+
+    unsigned int getField() { return field; }
+
+    void waitIfNeeded() {
+        if (suspension > 0) {
+            suspension--;
+        }
     }
 
-    bool waiting() {
-        return suspension > 0;
+    void suspend(unsigned int i) { suspension = i; }
+
+    void move(unsigned int i) { field = i; }
+
+    bool pay(unsigned int i) {
+        if (money >= i) {
+            money -= i;
+            return true;
+        } else {
+            money = 0;
+            return false;
+        }
     }
 
-    std::string status() {
-
-    }
-
-    std::string name() {
-        
-    }
-
-    void pay(uint64_t i) {
-
-    }
-
-    void get() {
-
-    }
+    void take(int i) { money += i; }
 };
 
 class BoardField {
-private:
+   protected:
     std::string const name;
-public:
+
+   public:
+    BoardField(std::string const &name) : name(name) {}
+
     virtual ~BoardField() = default;
 
-    virtual void passField();
+    // Trzeba jakos ominąć problem nieużywanej zmiennej
+    virtual void passField(__attribute__((unused)) Player *player) {}
 
-    virtual void landOnField();
+    //Tu tak samo
+    virtual void landOnField(__attribute__((unused)) Player *player) {}
+
+    std::string getName() { return name; }
 };
 
 class Beginning : public BoardField {
-private:
-    uint64_t gift = 50;
-public:
+   private:
+    unsigned int gift;
 
+   public:
+    Beginning(std::string const &name) : BoardField(name), gift(50) {}
+
+    void passField(Player *player) override { player->take(gift); }
+
+    void landOnField(Player *player) override { player->take(gift); }
 };
 
 class Goal : public BoardField {
-private:
-    uint64_t bonus;
-public:
+   private:
+    unsigned int bonus;
 
+   public:
+    Goal(std::string const &name, unsigned int bonus)
+        : BoardField(name), bonus(bonus) {}
+
+    void landOnField(Player *player) override { player->take(bonus); }
 };
 
 class Penalty : public BoardField {
-private:
-    uint64_t fee;
-public:  
+   private:
+    unsigned int fee;
+
+   public:
+    Penalty(std::string const &name, unsigned int fee)
+        : BoardField(name), fee(fee) {}
+
+    void landOnField(Player *player) override { player->pay(fee); }
 };
 
 class YellowCard : public BoardField {
-private:
-    uint64_t suspension;
-public:  
+   private:
+    unsigned int suspension;
+
+   public:
+    YellowCard(std::string const &name, unsigned int suspension)
+        : BoardField(name), suspension(suspension) {}
+
+    void landOnField(Player *player) override { player->suspend(suspension); }
+};
+
+class Bookmaker : public BoardField {
+   private:
+    unsigned int bet;
+    unsigned int cycle;
+    unsigned int players;
+
+   public:
+    Bookmaker(std::string const &name, unsigned int bet)
+        : BoardField(name), bet(bet), cycle(3), players(0) {}
+
+    void landOnField(Player *player) override {
+        if (players == 0) {
+            player->take(bet);
+        } else {
+            player->pay(bet);
+        }
+        players = (players + 1) % cycle;
+    }
 };
 
 class Match : public BoardField {
-private:
-    uint64_t fee;
-    int weight;
-    uint64_t howManyFees;
-public:
+   private:
+    unsigned int fee;
+    double weight;
+    unsigned int howManyFees;
 
+   public:
+    Match(std::string const &name, unsigned int fee, double weight)
+        : BoardField(name), fee(fee), weight(weight), howManyFees(0) {}
+
+    ~Match() override = default;
+
+    void passField(Player *player) override {
+        if (player->pay(fee)) howManyFees++;
+    }
+
+    void landOnField(Player *player) override {
+        player->take(fee * weight * howManyFees);
+        howManyFees = 0;
+    }
+};
+
+class EmptyField : public BoardField {
+   public:
+    EmptyField(std::string const &name) : BoardField(name) {}
 };
 
 class Board {
-private:
-    std::vector<BoardField> fields;
-public:
+   private:
+    std::vector<std::shared_ptr<BoardField>> fields;
 
+   public:
+    Board() : fields() {
+        fields.push_back(std::make_shared<Beginning>("Początek sezonu"));
+        fields.push_back(
+            std::make_shared<Match>("Mecz z San Marino", 160, 1.0));
+        fields.push_back(
+            std::make_shared<EmptyField>("Dzień wolny od treningu"));
+        fields.push_back(
+            std::make_shared<Match>("Mecz z Liechtensteinem", 220, 1.0));
+        fields.push_back(std::make_shared<YellowCard>("Żółta kartka", 3));
+        fields.push_back(std::make_shared<Match>("Mecz z Meksykiem", 300, 2.5));
+        fields.push_back(
+            std::make_shared<Match>("Mecz z Arabią Saudyjską", 280, 2.5));
+        fields.push_back(std::make_shared<Bookmaker>("Bukmacher", 100));
+        fields.push_back(std::make_shared<Match>("Mecz z Argentyną", 250, 2.5));
+        fields.push_back(std::make_shared<Goal>("Gol", 120));
+        fields.push_back(std::make_shared<Match>("Mecz z Francją", 400, 4.0));
+        fields.push_back(std::make_shared<Penalty>("Rzut karny", 180));
+    }
+
+    void playerMove(Player *player, unsigned int i) {
+        int actualField = player->getField();
+        int nextField = (actualField + i) % fields.size();
+        for (int j = (actualField + 1) % fields.size(); j != nextField;
+             j = (j + 1) % fields.size()) {
+            fields[j]->passField(player);
+        }
+        player->move(nextField);
+        fields[nextField]->landOnField(player);
+    }
+
+    std::string getFieldName(unsigned int i) { return fields[i]->getName(); }
 };
 
+class TooManyDiceException : public std::exception {};
+
+class TooFewDiceException : public std::exception {};
+
+class TooManyPlayersException : public std::exception {};
+
+class TooFewPlayersException : public std::exception {};
+
 class WorldCup2022 : public WorldCup {
-public:
-    WorldCup2022() {}
+   public:
+    WorldCup2022() : scoreboard(), dice(), players(), board() {}
 
     // destruktor
-    ~WorldCup2022() {
-
-    }
+    ~WorldCup2022() {}
 
     // Jeżeli argumentem jest pusty wskaźnik, to nie wykonuje żadnej operacji
     // (ale nie ma błędu).
-    void addDie(std::shared_ptr<Die> die) {
-
+    void addDie(std::shared_ptr<Die> die) override {
+        if (die != nullptr) {
+            dice.push_back(die);
+        }
     }
 
     // Dodaje nowego gracza o podanej nazwie.
-    void addPlayer(std::string const &name) {
-
+    void addPlayer(std::string const &name) override {
+        std::shared_ptr<Player> player = std::make_shared<Player>(Player(name));
+        players.push_back(player);
     }
 
     // Konfiguruje tablicę wyników. Domyślnie jest skonfigurowana tablica
     // wyników, która nic nie robi.
-    void setScoreBoard(std::shared_ptr<ScoreBoard> scoreboard) {
-
+    void setScoreBoard(std::shared_ptr<ScoreBoard> scoreboard) override {
+        if (scoreboard != nullptr) {
+            this->scoreboard = scoreboard;
+        }
     }
 
     // Przeprowadza rozgrywkę co najwyżej podanej liczby rund (rozgrywka może
@@ -138,13 +262,58 @@ public:
     // rozpoczęcie gry.
     // Wyjątki powinny dziedziczyć po std::exception.
     void play(unsigned int rounds) {
-        
+        if (dice.size() > 2) {
+            throw TooManyDiceException();
+            return;
+        }
+        if (dice.size() < 2) {
+            throw TooFewDiceException();
+            return;
+        }
+        if (players.size() > 11) {
+            throw TooManyPlayersException();
+            return;
+        }
+        if (players.size() < 2) {
+            throw TooFewPlayersException();
+            return;
+        }
+
+        unsigned int roundNumber = 0;
+
+        while (roundNumber < rounds && players.size() > 1) {
+            scoreboard->onRound(roundNumber);
+            for (size_t i = 0; i < players.size(); i++) {
+                Player *player = players[i].get();
+                player->waitIfNeeded();
+                if (!player->waiting()) {
+                    int dice1 = dice[0]->roll();
+                    int dice2 = dice[1]->roll();
+                    board.playerMove(player, dice1 + dice2);
+                }
+                scoreboard->onTurn(player->getName(), player->getStatus(),
+                                   board.getFieldName(player->getField()),
+                                   player->getMoney());
+                if (player->bankrupt()) {
+                    players.erase(players.begin() + i);
+                }
+            }
+            roundNumber++;
+        }
+
+        if (players.size() == 1) {
+            scoreboard->onWin(players[0]->getName());
+        } else {
+            // do rozważenia co sie dzieje, gdy wszyscy przegrywaja w tej samej
+            // rundzie
+        }
     }
 
-private:
+   private:
     std::shared_ptr<ScoreBoard> scoreboard;
-    std::vector<Die> dies;
-    std::vector<Player> players;
+    std::vector<std::shared_ptr<Die>> dice;
+    std::vector<std::shared_ptr<Player>> players;
+    Board board;
 };
 
 #endif
