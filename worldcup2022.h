@@ -22,8 +22,8 @@ class Dice {
         }
         int roll() {
             int sum = 0;
-            for (int i = 0; i < dice.size(); i++) {
-                sum += dice[i]->roll();
+            for (auto die: dice) {
+                sum += die->roll();
             }
             return sum;
         }
