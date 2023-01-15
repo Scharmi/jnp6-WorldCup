@@ -92,10 +92,10 @@ class BoardField {
     virtual ~BoardField() = default;
 
     // Trzeba jakos ominąć problem nieużywanej zmiennej
-    virtual void passField(__attribute__((unused)) Player *player) {}
+    virtual void passField(Player *player) { (void) player; }
 
     //Tu tak samo
-    virtual void landOnField(__attribute__((unused)) Player *player) {}
+    virtual void landOnField(Player *player) { (void) player; }
 
     std::string getName() { return name; }
 };
