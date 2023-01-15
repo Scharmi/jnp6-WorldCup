@@ -20,9 +20,9 @@ class Dice {
    private:
     std::vector<std::shared_ptr<Die>> dice;
     unsigned int diceCount;
-    
-   public: 
-    Dice(int diceCount) : diceCount(diceCount) {}
+
+   public:
+    constexpr Dice(int diceCount) : diceCount(diceCount) {}
 
     void addDie(std::shared_ptr<Die> die) {
         if (die != nullptr) {
@@ -30,19 +30,17 @@ class Dice {
         }
     }
 
-    int size() {
-        return dice.size();
-    }
+    constexpr int size() const { return dice.size(); }
 
-    int roll() {
-        if(dice.size() < diceCount) {
+    int roll() const {
+        if (dice.size() < diceCount) {
             throw TooFewDiceException();
         }
-        if(dice.size() > diceCount) {
+        if (dice.size() > diceCount) {
             throw TooManyDiceException();
         }
         int sum = 0;
-        for (auto die: dice) {
+        for (auto die : dice) {
             sum += die->roll();
         }
         return sum;
@@ -58,14 +56,14 @@ class Player {
     bool bankrupted;
 
    public:
-    Player(std::string const &name)
+    constexpr Player(std::string const &name)
         : name(name), money(1000), field(0), suspension(0), bankrupted(false) {}
 
-    bool bankrupt() { return bankrupted; }
+    constexpr bool bankrupt() const { return bankrupted; }
 
-    bool waiting() { return suspension > 0; }
+    constexpr bool waiting() const { return suspension > 0; }
 
-    std::string getStatus() {
+    constexpr std::string getStatus() const {
         if (bankrupt()) {
             return "*** bankrut ***";
         } else if (waiting()) {
@@ -75,24 +73,25 @@ class Player {
         }
     }
 
-    unsigned int getMoney() { return money; }
+    constexpr unsigned int getMoney() const { return money; }
 
-    std::string getName() { return name; }
+    constexpr std::string getName() const { return name; }
 
-    unsigned int getField() { return field; }
+    constexpr unsigned int getField() const { return field; }
 
-    void waitIfNeeded() {
+    constexpr void waitIfNeeded() {
         if (suspension > 0) {
             suspension--;
         }
     }
 
-    void suspend(unsigned int i) { suspension = i; }
+    constexpr void suspend(unsigned int i) { suspension = i; }
 
-    void move(unsigned int i) { field = i; }
+    constexpr void move(unsigned int i) { field = i; }
 
-    //Zakładamy, że w przypadku braku wystarczającej ilości pieniędzy gracz płaci wszystkie swoje pieniądze
-    int pay(unsigned int i) {
+    // Zakładamy, że w przypadku braku wystarczającej ilości pieniędzy gracz
+    // płaci wszystkie swoje pieniądze
+    constexpr int pay(unsigned int i) {
         if (money >= i) {
             money -= i;
             return i;
@@ -104,9 +103,9 @@ class Player {
         }
     }
 
-    bool take(int i) { 
-        if(!bankrupted) {
-            money += i; 
+    constexpr bool take(int i) {
+        if (!bankrupted) {
+            money += i;
             return true;
         }
         return false;
@@ -118,15 +117,15 @@ class BoardField {
     std::string const name;
 
    public:
-    BoardField(std::string const &name) : name(name) {}
+    constexpr BoardField(std::string const &name) : name(name) {}
 
-    virtual ~BoardField() = default;
+    virtual constexpr ~BoardField() = default;
 
-    virtual void passField(Player *player) { (void) player; }
+    virtual constexpr void passField(Player *player) { (void)player; }
 
-    virtual void landOnField(Player *player) { (void) player; }
+    virtual constexpr void landOnField(Player *player) { (void)player; }
 
-    std::string getName() { return name; }
+    constexpr std::string getName() const { return name; }
 };
 
 class Beginning : public BoardField {
@@ -134,11 +133,11 @@ class Beginning : public BoardField {
     unsigned int gift;
 
    public:
-    Beginning(std::string const &name) : BoardField(name), gift(50) {}
+    constexpr Beginning(std::string const &name) : BoardField(name), gift(50) {}
 
-    void passField(Player *player) override { player->take(gift); }
+    constexpr void passField(Player *player) override { player->take(gift); }
 
-    void landOnField(Player *player) override { player->take(gift); }
+    constexpr void landOnField(Player *player) override { player->take(gift); }
 };
 
 class Goal : public BoardField {
@@ -146,10 +145,10 @@ class Goal : public BoardField {
     unsigned int bonus;
 
    public:
-    Goal(std::string const &name, unsigned int bonus)
+    constexpr Goal(std::string const &name, unsigned int bonus)
         : BoardField(name), bonus(bonus) {}
 
-    void landOnField(Player *player) override { player->take(bonus); }
+    constexpr void landOnField(Player *player) override { player->take(bonus); }
 };
 
 class Penalty : public BoardField {
@@ -157,10 +156,10 @@ class Penalty : public BoardField {
     unsigned int fee;
 
    public:
-    Penalty(std::string const &name, unsigned int fee)
+    constexpr Penalty(std::string const &name, unsigned int fee)
         : BoardField(name), fee(fee) {}
 
-    void landOnField(Player *player) override { player->pay(fee); }
+    constexpr void landOnField(Player *player) override { player->pay(fee); }
 };
 
 class YellowCard : public BoardField {
@@ -168,10 +167,12 @@ class YellowCard : public BoardField {
     unsigned int suspension;
 
    public:
-    YellowCard(std::string const &name, unsigned int suspension)
+    constexpr YellowCard(std::string const &name, unsigned int suspension)
         : BoardField(name), suspension(suspension) {}
 
-    void landOnField(Player *player) override { player->suspend(suspension); }
+    constexpr void landOnField(Player *player) override {
+        player->suspend(suspension);
+    }
 };
 
 class Bookmaker : public BoardField {
@@ -181,10 +182,10 @@ class Bookmaker : public BoardField {
     unsigned int players;
 
    public:
-    Bookmaker(std::string const &name, unsigned int bet)
+    constexpr Bookmaker(std::string const &name, unsigned int bet)
         : BoardField(name), bet(bet), cycle(3), players(0) {}
 
-    void landOnField(Player *player) override {
+    constexpr void landOnField(Player *player) override {
         if (players == 0) {
             player->take(bet);
         } else {
@@ -201,26 +202,23 @@ class Match : public BoardField {
     unsigned int howMuchMoney;
 
    public:
-    Match(std::string const &name, unsigned int fee, double weight)
+    constexpr Match(std::string const &name, unsigned int fee, double weight)
         : BoardField(name), fee(fee), weight(weight), howMuchMoney(0) {}
 
-    ~Match() override = default;
-
-    //Przechodzenie przez pole bez zatrzymania
-    void passField(Player *player) override {
-        howMuchMoney += player -> pay(fee);
+    // Przechodzenie przez pole bez zatrzymania
+    constexpr void passField(Player *player) override {
+        howMuchMoney += player->pay(fee);
     }
 
-    //Zatrzymanie na polu
-    void landOnField(Player *player) override {
-        if(player->take(howMuchMoney * weight)) howMuchMoney = 0;
-
+    // Zatrzymanie na polu
+    constexpr void landOnField(Player *player) override {
+        if (player->take(howMuchMoney * weight)) howMuchMoney = 0;
     }
 };
 
 class EmptyField : public BoardField {
    public:
-    EmptyField(std::string const &name) : BoardField(name) {}
+    constexpr EmptyField(std::string const &name) : BoardField(name) {}
 };
 
 class Board {
@@ -247,22 +245,23 @@ class Board {
         fields.push_back(std::make_shared<Penalty>("Rzut karny", 180));
     }
 
-    void playerMove(Player *player, unsigned int i) {
+    void playerMove(Player *player, unsigned int i) const {
         int currentField = player->getField();
         int nextField = (currentField + i) % fields.size();
         unsigned int counter = 0;
-        while(counter + 1 < i) {
-            fields[(currentField + counter + 1) % fields.size()]->passField(player);
+        while (counter + 1 < i) {
+            fields[(currentField + counter + 1) % fields.size()]->passField(
+                player);
             counter++;
         }
         player->move(nextField);
         fields[nextField]->landOnField(player);
     }
 
-    std::string getFieldName(unsigned int i) { return fields[i]->getName(); }
+    std::string getFieldName(unsigned int i) const {
+        return fields[i]->getName();
+    }
 };
-
-
 
 class WorldCup2022 : public WorldCup {
    public:
@@ -321,10 +320,10 @@ class WorldCup2022 : public WorldCup {
         while (roundNumber < rounds && players.size() > 1) {
             scoreboard->onRound(roundNumber);
             //
-            for (size_t i = 0; i < players.size(); ) {
+            for (size_t i = 0; i < players.size();) {
                 Player *player = players[i].get();
                 player->waitIfNeeded();
-                //Sprawdzenie czy gracz nie pauzuje
+                // Sprawdzenie czy gracz nie pauzuje
                 if (!player->waiting()) {
                     int diceResult = dice.roll();
                     board.playerMove(player, diceResult);
@@ -334,28 +333,29 @@ class WorldCup2022 : public WorldCup {
                                    player->getMoney());
                 if (player->bankrupt()) {
                     players.erase(players.begin() + i);
-                    //Jeśli pozostał tylko jeden gracz, następuje zakończenie gry
-                    if (players.size() == 1) 
-                        break;
-                    //W przypadku usuwania gracza nie trzeba zwiększać indeksu gdyż następny gracz zastąpi go na aktualnej pozycji
+                    // Jeśli pozostał tylko jeden gracz, następuje zakończenie
+                    // gry
+                    if (players.size() == 1) break;
+                    // W przypadku usuwania gracza nie trzeba zwiększać indeksu
+                    // gdyż następny gracz zastąpi go na aktualnej pozycji
                 } else {
                     i++;
                 }
             }
             roundNumber++;
         }
-        
-        //Sprawdzenie kto wygrał w przypadku gdy po rozegraniu wszystkich rund został więcej niż jeden gracz
+
+        // Sprawdzenie kto wygrał w przypadku gdy po rozegraniu wszystkich rund
+        // został więcej niż jeden gracz
         Player *winner = players[0].get();
 
-        for (auto player: players) {
+        for (auto player : players) {
             if (player->getMoney() > winner->getMoney()) {
                 winner = player.get();
             }
         }
 
         scoreboard->onWin(winner->getName());
-
     }
 
    private:
