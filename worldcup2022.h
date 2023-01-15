@@ -8,10 +8,21 @@
 #include <vector>
 
 #include "worldcup.h"
+class TooManyDiceException : public std::exception {};
+
+class TooFewDiceException : public std::exception {};
+
+class TooManyPlayersException : public std::exception {};
+
+class TooFewPlayersException : public std::exception {};
 class Dice {
     private:
         std::vector<std::shared_ptr<Die>> dice;
+        unsigned int diceCount;
     public: 
+        Dice(int diceCount) {
+            this->diceCount = diceCount;
+        }
         void addDie(std::shared_ptr<Die> die) {
             if (die != nullptr) {
                 dice.push_back(die);
@@ -21,6 +32,12 @@ class Dice {
             return dice.size();
         }
         int roll() {
+            if(dice.size() < diceCount) {
+                throw TooFewDiceException();
+            }
+            if(dice.size() > diceCount) {
+                throw TooManyDiceException();
+            }
             int sum = 0;
             for (auto die: dice) {
                 sum += die->roll();
@@ -230,17 +247,11 @@ class Board {
     std::string getFieldName(unsigned int i) { return fields[i]->getName(); }
 };
 
-class TooManyDiceException : public std::exception {};
 
-class TooFewDiceException : public std::exception {};
-
-class TooManyPlayersException : public std::exception {};
-
-class TooFewPlayersException : public std::exception {};
 
 class WorldCup2022 : public WorldCup {
    public:
-    WorldCup2022() : scoreboard(), dice(), players(), board() {}
+    WorldCup2022() : scoreboard(), dice(2), players(), board() {}
 
     // destruktor
     ~WorldCup2022() {}
@@ -281,14 +292,6 @@ class WorldCup2022 : public WorldCup {
     // rozpoczęcie gry.
     // Wyjątki powinny dziedziczyć po std::exception.
     void play(unsigned int rounds) {
-        if (dice.size() > 2) {
-            throw TooManyDiceException();
-            return;
-        }
-        if (dice.size() < 2) {
-            throw TooFewDiceException();
-            return;
-        }
         if (players.size() > 11) {
             throw TooManyPlayersException();
             return;
