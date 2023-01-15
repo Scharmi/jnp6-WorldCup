@@ -8,7 +8,26 @@
 #include <vector>
 
 #include "worldcup.h"
-
+class Dice {
+    private:
+        std::vector<std::shared_ptr<Die>> dice;
+    public: 
+        void addDie(std::shared_ptr<Die> die) {
+            if (die != nullptr) {
+                dice.push_back(die);
+            }
+        }
+        int size() {
+            return dice.size();
+        }
+        int roll() {
+            int sum = 0;
+            for (int i = 0; i < dice.size(); i++) {
+                sum += dice[i]->roll();
+            }
+            return sum;
+        }
+};
 class Player {
    private:
     std::string const name;
@@ -230,7 +249,7 @@ class WorldCup2022 : public WorldCup {
     // (ale nie ma błędu).
     void addDie(std::shared_ptr<Die> die) override {
         if (die != nullptr) {
-            dice.push_back(die);
+            dice.addDie(die);
         }
     }
 
@@ -287,9 +306,8 @@ class WorldCup2022 : public WorldCup {
                 Player *player = players[i].get();
                 player->waitIfNeeded();
                 if (!player->waiting()) {
-                    int dice1 = dice[0]->roll();
-                    int dice2 = dice[1]->roll();
-                    board.playerMove(player, dice1 + dice2);
+                    int diceResult = dice.roll();
+                    board.playerMove(player, diceResult);
                 }
                 scoreboard->onTurn(player->getName(), player->getStatus(),
                                    board.getFieldName(player->getField()),
@@ -319,7 +337,7 @@ class WorldCup2022 : public WorldCup {
 
    private:
     std::shared_ptr<ScoreBoard> scoreboard;
-    std::vector<std::shared_ptr<Die>> dice;
+    Dice dice;
     std::vector<std::shared_ptr<Player>> players;
     Board board;
 };
