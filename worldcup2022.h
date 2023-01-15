@@ -108,10 +108,8 @@ class BoardField {
 
     virtual ~BoardField() = default;
 
-    // Trzeba jakos ominąć problem nieużywanej zmiennej
     virtual void passField(Player *player) { (void) player; }
 
-    //Tu tak samo
     virtual void landOnField(Player *player) { (void) player; }
 
     std::string getName() { return name; }
@@ -234,10 +232,10 @@ class Board {
     }
 
     void playerMove(Player *player, unsigned int i) {
-        int actualField = player->getField();
-        int nextField = (actualField + i) % fields.size();
+        int currentField = player->getField();
+        int nextField = (currentField + i) % fields.size();
         // Przechodzenie przez kolejne pola
-        for (int j = (actualField + 1) % fields.size(); j != nextField;
+        for (int j = (currentField + 1) % fields.size(); j != nextField;
              j = (j + 1) % fields.size()) {
             fields[j]->passField(player);
         }
@@ -334,7 +332,7 @@ class WorldCup2022 : public WorldCup {
         Player *winner = players[0].get();
 
         for (auto player: players) {
-            if (player->getMoney() > player->getMoney()) {
+            if (player->getMoney() > winner->getMoney()) {
                 winner = player.get();
             }
         }
