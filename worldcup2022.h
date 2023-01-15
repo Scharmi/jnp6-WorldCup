@@ -283,7 +283,7 @@ class WorldCup2022 : public WorldCup {
 
         while (roundNumber < rounds && players.size() > 1) {
             scoreboard->onRound(roundNumber);
-            for (size_t i = 0; i < players.size(); i++) {
+            for (size_t i = 0; i < players.size(); ) {
                 Player *player = players[i].get();
                 player->waitIfNeeded();
                 if (!player->waiting()) {
@@ -296,17 +296,25 @@ class WorldCup2022 : public WorldCup {
                                    player->getMoney());
                 if (player->bankrupt()) {
                     players.erase(players.begin() + i);
+                    if (players.size() == 1) 
+                        break;
+                } else {
+                    i++;
                 }
             }
             roundNumber++;
         }
 
-        if (players.size() == 1) {
-            scoreboard->onWin(players[0]->getName());
-        } else {
-            // do rozważenia co sie dzieje, gdy wszyscy przegrywaja w tej samej
-            // rundzie
+        Player *winner = players[0].get();
+
+        for (auto player: players) {
+            if (player->getMoney() > player->getMoney()) {
+                winner = player.get();
+            }
         }
+
+        scoreboard->onWin(winner->getName());
+
     }
 
    private:
