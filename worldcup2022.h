@@ -51,12 +51,13 @@ class Player {
     unsigned int money;
     unsigned int field;
     unsigned int suspension;
+    bool bankrupted;
 
    public:
     Player(std::string const &name)
-        : name(name), money(1000), field(0), suspension(0) {}
+        : name(name), money(1000), field(0), suspension(0), bankrupted(false) {}
 
-    bool bankrupt() { return money == 0; }
+    bool bankrupt() { return bankrupted; }
 
     bool waiting() { return suspension > 0; }
 
@@ -85,18 +86,26 @@ class Player {
     void suspend(unsigned int i) { suspension = i; }
 
     void move(unsigned int i) { field = i; }
-
-    bool pay(unsigned int i) {
+    //Zakładamy, że w przypadku braku wystarczającej ilości pieniędzy gracz płaci wszystkie swoje pieniądze
+    int pay(unsigned int i) {
         if (money >= i) {
             money -= i;
-            return true;
+            return i;
         } else {
+            bankrupted = true;
+            i = money;
             money = 0;
-            return false;
+            return i;
         }
     }
 
-    void take(int i) { money += i; }
+    bool take(int i) { 
+        if(!bankrupted) {
+            money += i; 
+            return true;
+        }
+        return false;
+    }
 };
 
 class BoardField {
@@ -184,21 +193,21 @@ class Match : public BoardField {
    private:
     unsigned int fee;
     double weight;
-    unsigned int howManyFees;
+    unsigned int howMuchMoney;
 
    public:
     Match(std::string const &name, unsigned int fee, double weight)
-        : BoardField(name), fee(fee), weight(weight), howManyFees(0) {}
+        : BoardField(name), fee(fee), weight(weight), howMuchMoney(0) {}
 
     ~Match() override = default;
     //Przechodzenie przez pole bez zatrzymania
     void passField(Player *player) override {
-        if (player->pay(fee)) howManyFees++;
+        howMuchMoney += player -> pay(fee);
     }
     //Zatrzymanie na polu
     void landOnField(Player *player) override {
-        player->take(fee * weight * howManyFees);
-        howManyFees = 0;
+        if(player->take(howMuchMoney * weight)) howMuchMoney = 0;
+
     }
 };
 
@@ -234,10 +243,10 @@ class Board {
     void playerMove(Player *player, unsigned int i) {
         int currentField = player->getField();
         int nextField = (currentField + i) % fields.size();
-        // Przechodzenie przez kolejne pola
-        for (int j = (currentField + 1) % fields.size(); j != nextField;
-             j = (j + 1) % fields.size()) {
-            fields[j]->passField(player);
+        unsigned int counter = 0;
+        while(counter < i - 1) {
+            fields[(currentField + counter + 1) % fields.size()]->passField(player);
+            counter++;
         }
         player->move(nextField);
         fields[nextField]->landOnField(player);
