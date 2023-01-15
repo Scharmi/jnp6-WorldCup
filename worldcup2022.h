@@ -328,7 +328,7 @@ class WorldCup2022 : public WorldCup {
             }
             roundNumber++;
         }
-
+        //Sprawdzenie kto wygrał w przypadku gdy po rozegraniu wszystkich rund został więcej niż jeden gracz
         Player *winner = players[0].get();
 
         for (auto player: players) {
