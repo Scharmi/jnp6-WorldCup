@@ -193,11 +193,11 @@ class Match : public BoardField {
         : BoardField(name), fee(fee), weight(weight), howManyFees(0) {}
 
     ~Match() override = default;
-
+    //Przechodzenie przez pole bez zatrzymania
     void passField(Player *player) override {
         if (player->pay(fee)) howManyFees++;
     }
-
+    //Zatrzymanie na polu
     void landOnField(Player *player) override {
         player->take(fee * weight * howManyFees);
         howManyFees = 0;
@@ -236,6 +236,7 @@ class Board {
     void playerMove(Player *player, unsigned int i) {
         int actualField = player->getField();
         int nextField = (actualField + i) % fields.size();
+        // Przechodzenie przez kolejne pola
         for (int j = (actualField + 1) % fields.size(); j != nextField;
              j = (j + 1) % fields.size()) {
             fields[j]->passField(player);
@@ -305,9 +306,11 @@ class WorldCup2022 : public WorldCup {
 
         while (roundNumber < rounds && players.size() > 1) {
             scoreboard->onRound(roundNumber);
+            //
             for (size_t i = 0; i < players.size(); ) {
                 Player *player = players[i].get();
                 player->waitIfNeeded();
+                //Sprawdzenie czy gracz nie pauzuje
                 if (!player->waiting()) {
                     int diceResult = dice.roll();
                     board.playerMove(player, diceResult);
@@ -317,8 +320,10 @@ class WorldCup2022 : public WorldCup {
                                    player->getMoney());
                 if (player->bankrupt()) {
                     players.erase(players.begin() + i);
+                    //Jeśli pozostał tylko jeden gracz, następuje zakończenie gry
                     if (players.size() == 1) 
                         break;
+                    //W przypadku usuwania gracza nie trzeba zwiększać indeksu gdyż następny gracz zastąpi go na aktualnej pozycji
                 } else {
                     i++;
                 }
