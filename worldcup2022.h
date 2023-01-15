@@ -15,36 +15,40 @@ class TooFewDiceException : public std::exception {};
 class TooManyPlayersException : public std::exception {};
 
 class TooFewPlayersException : public std::exception {};
+
 class Dice {
-    private:
-        std::vector<std::shared_ptr<Die>> dice;
-        unsigned int diceCount;
-    public: 
-        Dice(int diceCount) {
-            this->diceCount = diceCount;
+   private:
+    std::vector<std::shared_ptr<Die>> dice;
+    unsigned int diceCount;
+    
+   public: 
+    Dice(int diceCount) : diceCount(diceCount) {}
+
+    void addDie(std::shared_ptr<Die> die) {
+        if (die != nullptr) {
+            dice.push_back(die);
         }
-        void addDie(std::shared_ptr<Die> die) {
-            if (die != nullptr) {
-                dice.push_back(die);
-            }
+    }
+
+    int size() {
+        return dice.size();
+    }
+
+    int roll() {
+        if(dice.size() < diceCount) {
+            throw TooFewDiceException();
         }
-        int size() {
-            return dice.size();
+        if(dice.size() > diceCount) {
+            throw TooManyDiceException();
         }
-        int roll() {
-            if(dice.size() < diceCount) {
-                throw TooFewDiceException();
-            }
-            if(dice.size() > diceCount) {
-                throw TooManyDiceException();
-            }
-            int sum = 0;
-            for (auto die: dice) {
-                sum += die->roll();
-            }
-            return sum;
+        int sum = 0;
+        for (auto die: dice) {
+            sum += die->roll();
         }
+        return sum;
+    }
 };
+
 class Player {
    private:
     std::string const name;
@@ -86,6 +90,7 @@ class Player {
     void suspend(unsigned int i) { suspension = i; }
 
     void move(unsigned int i) { field = i; }
+
     //Zakładamy, że w przypadku braku wystarczającej ilości pieniędzy gracz płaci wszystkie swoje pieniądze
     int pay(unsigned int i) {
         if (money >= i) {
@@ -200,10 +205,12 @@ class Match : public BoardField {
         : BoardField(name), fee(fee), weight(weight), howMuchMoney(0) {}
 
     ~Match() override = default;
+
     //Przechodzenie przez pole bez zatrzymania
     void passField(Player *player) override {
         howMuchMoney += player -> pay(fee);
     }
+
     //Zatrzymanie na polu
     void landOnField(Player *player) override {
         if(player->take(howMuchMoney * weight)) howMuchMoney = 0;
@@ -244,7 +251,7 @@ class Board {
         int currentField = player->getField();
         int nextField = (currentField + i) % fields.size();
         unsigned int counter = 0;
-        while(counter < i - 1) {
+        while(counter + 1 < i) {
             fields[(currentField + counter + 1) % fields.size()]->passField(player);
             counter++;
         }
@@ -337,6 +344,7 @@ class WorldCup2022 : public WorldCup {
             }
             roundNumber++;
         }
+        
         //Sprawdzenie kto wygrał w przypadku gdy po rozegraniu wszystkich rund został więcej niż jeden gracz
         Player *winner = players[0].get();
 
